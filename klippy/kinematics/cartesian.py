@@ -42,6 +42,12 @@ class CartKinematics:
             toolhead.register_step_generator(s.generate_steps)
         self.printer.register_event_handler("stepper_enable:motor_off",
                                             self._motor_off)
+        
+        gcode = self.printer.lookup_object('gcode')
+        gcode.register_mux_command("SET_Y_ROTATION_DISTANCE", "STEPPER", self.name,
+                                   self.cmd_SET_Y_ROTATION_DISTANCE, 
+                                   desc=self.cmd_SET_Y_ROTATION_DISTANCE_help)
+
         # Setup boundary checks
         max_velocity, max_accel = toolhead.get_max_velocity()
         self.max_z_velocity = config.getfloat('max_z_velocity', max_velocity,
@@ -121,6 +127,30 @@ class CartKinematics:
             'axis_minimum': self.axes_min,
             'axis_maximum': self.axes_max,
         }
+    
+    cmd_SET_Y_ROTATION_DISTANCE_help = "Set Y rotation distance"
+    def cmd_SET_Y_ROTATION_DISTANCE(self, gcmd):
+        rotation_dist = gcmd.get_float('DISTANCE', None)
+        stepper = self.get_steppers().find(lambda s: s.get_name(short=True).lower() == 'y')
+        if rotation_dist is not None:
+            if not rotation_dist:
+                raise gcmd.error("Rotation distance can not be zero")
+            invert_dir, orig_invert_dir = stepper.get_dir_inverted()
+            next_invert_dir = orig_invert_dir
+            if rotation_dist < 0.:
+                next_invert_dir = not orig_invert_dir
+                rotation_dist = -rotation_dist
+            toolhead = self.printer.lookup_object('toolhead')
+            toolhead.flush_step_generation()
+            stepper.set_rotation_distance(rotation_dist)
+            stepper.set_dir_inverted(next_invert_dir)
+        else:
+            rotation_dist, spr = stepper.get_rotation_distance()
+        invert_dir, orig_invert_dir = stepper.get_dir_inverted()
+        if invert_dir != orig_invert_dir:
+            rotation_dist = -rotation_dist
+        gcmd.respond_info("Extruder '%s' rotation distance set to %0.6f"
+                          % (stepper.get_name(), rotation_dist))
 
 def load_kinematics(toolhead, config):
     return CartKinematics(toolhead, config)
