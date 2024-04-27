@@ -44,7 +44,7 @@ class CartKinematics:
                                             self._motor_off)
         
         gcode = self.printer.lookup_object('gcode')
-        gcode.register_mux_command("SET_Y_ROTATION_DISTANCE", "STEPPER", self.name,
+        gcode.register_mux_command("SET_Y_ROTATION_DISTANCE", "STEPPER", "stepper_y",
                                    self.cmd_SET_Y_ROTATION_DISTANCE, 
                                    desc=self.cmd_SET_Y_ROTATION_DISTANCE_help)
 
