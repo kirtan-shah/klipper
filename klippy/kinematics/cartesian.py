@@ -131,7 +131,7 @@ class CartKinematics:
     cmd_SET_Y_ROTATION_DISTANCE_help = "Set Y rotation distance"
     def cmd_SET_Y_ROTATION_DISTANCE(self, gcmd):
         rotation_dist = gcmd.get_float('DISTANCE', None)
-        stepper = self.get_steppers().find(lambda s: s.get_name(short=True).lower() == 'y')
+        stepper = [s for s in self.get_steppers() if s.get_name(short=True).lower() == 'y'][0]
         if rotation_dist is not None:
             if not rotation_dist:
                 raise gcmd.error("Rotation distance can not be zero")
